@@ -40,13 +40,17 @@ Sends a message to only select clients
 */
   public void send(String msg, String recipientName) {
     ClientConnectionData recipient = null;
-    for (ClientConnectionData c : clientList) {
-      if (c.getUserName().equals(recipientName)) {
-        recipient = c;
-        break;
+    synchronized (clientList) {
+      for (ClientConnectionData c : clientList) {
+        if (c.getUserName().equals(recipientName)) {
+          recipient = c;
+          break;
+        }
       }
     }
-
+    if(recipient == null) {
+      return;
+    }
     try {
       System.out.println("Sending -- " + msg + " -- to : " + recipient.getUserName());
       recipient.getOut().println(msg);
@@ -57,6 +61,14 @@ Sends a message to only select clients
   }
 
   public boolean validate(String name) {
+    synchronized (clientList) {
+      for (ClientConnectionData c : clientList) {
+        if (c.getUserName() != null && c.getUserName().equalsIgnoreCase(name)) {
+          return false;
+        }
+      }
+    }
+    
     Matcher matcher = pattern.matcher(name);
     return matcher.find();
   }
@@ -113,6 +125,8 @@ Sends a message to only select clients
                   for(int i = 0; i < activeRequests.size(); i++) {
                     if (activeRequests.get(i).isCounterpart(sender, target)) {
                       counterpart = activeRequests.get(i);
+                      activeRequests.remove(i);
+                      break;
                     }
                   }
                   if (counterpart != null) {

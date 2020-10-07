@@ -39,6 +39,14 @@ public class ClientServerHandler implements Runnable {
           String name = incoming.substring(4).trim();
           System.out.printf("%s disconnected\n", name);
         }
+        else if(incoming.startsWith("RPSRESULT")) {
+          String result = incoming.substring(9).trim();
+          System.out.println(result);
+        }
+        else if(incoming.startsWith("RPS")) {
+          String name = incoming.substring(3).trim();
+          System.out.printf("%s wants to play you in Rock, Paper, Scissors! To accept, type \"/rps %s [R|P|S]\"\n", name, name);
+        }
         else {
           System.out.printf("Undefined or poorly formatted header on message : %s", incoming);
         }

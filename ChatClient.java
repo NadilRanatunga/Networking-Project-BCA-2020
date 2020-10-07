@@ -44,6 +44,14 @@ public class ChatClient {
 
         header = "PCHAT " + target; 
       }
+      else if (line.toLowerCase().startsWith("/rps")) {
+        String details = line.substring(4).trim();
+        int delimiter = details.indexOf(" ");
+        String target = details.substring(0, delimiter).trim();
+        line = details.substring(delimiter).trim();
+
+        header = "RPS " + target; 
+      }
       
       String msg = String.format("%s %s", header, line);
       out.println(msg);

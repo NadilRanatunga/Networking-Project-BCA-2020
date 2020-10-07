@@ -10,6 +10,7 @@ public class ServerClientHandler implements Runnable {
   // Maintain data about the client serviced by this thread
   private ClientConnectionData client;
   private ArrayList<ClientConnectionData> clientList;
+  private static ArrayList<RPSRequest> activeRequests = new ArrayList<RPSRequest>();
   private static final Pattern pattern = Pattern.compile("^[a-zA-Z0-9_]+$");
 
   public ServerClientHandler(ClientConnectionData client, ArrayList<ClientConnectionData> clientList) {
@@ -37,7 +38,15 @@ public class ServerClientHandler implements Runnable {
 /*
 Sends a message to only select clients
 */
-  public void send(String msg, ClientConnectionData recipient) {
+  public void send(String msg, String recipientName) {
+    ClientConnectionData recipient = null;
+    for (ClientConnectionData c : clientList) {
+      if (c.getUserName().equals(recipientName)) {
+        recipient = c;
+        break;
+      }
+    }
+
     try {
       System.out.println("Sending -- " + msg + " -- to : " + recipient.getUserName());
       recipient.getOut().println(msg);
@@ -86,16 +95,37 @@ Sends a message to only select clients
                 int delimiter = details.indexOf(" ");
                 String target = details.substring(0, delimiter).trim();
                 String message = String.format("CHAT %s %s", "(PRIVATE)" + client.getUserName(), details.substring(delimiter));
-                
-                ClientConnectionData recipient = null;
-                for (ClientConnectionData c : clientList) {
-                  if (c.getUserName().equals(target)) {
-                    recipient = c;
-                    break;
+                send(message, target);
+              }
+              else if (incoming.startsWith("RPS")) {
+                String details = incoming.substring(4).trim();
+                int delimiter = details.indexOf(" ");
+                String sender = client.getUserName();
+                String target = details.substring(0, delimiter).trim();
+                String choice = details.substring(delimiter).trim();
+                if (!choice.equalsIgnoreCase("R") && !choice.equalsIgnoreCase("P") && !choice.equalsIgnoreCase("S")) {
+                  send("RPSRESULT The correct format for /rps is : \"/rps [name] [R|P|S]\"", client.getUserName());
+                  continue;
+                }
+                System.out.printf("Making a request between %s and %s with a choice of %s\n", sender, target, choice);
+                synchronized (activeRequests) {
+                  RPSRequest counterpart = null;
+                  for(int i = 0; i < activeRequests.size(); i++) {
+                    if (activeRequests.get(i).isCounterpart(sender, target)) {
+                      counterpart = activeRequests.get(i);
+                    }
+                  }
+                  if (counterpart != null) {
+                    String outcome = counterpart.targetChose(choice);
+                    broadcast(String.format("RPSRESULT %s", outcome));
+                  }
+                  else {
+                    String message = String.format("RPS %s", sender);
+  
+                    activeRequests.add(new RPSRequest(sender, target, choice));
+                    send(message, target);
                   }
                 }
-
-                send(message, recipient);
               }
               else if (incoming.startsWith("QUIT")) {
                 break;

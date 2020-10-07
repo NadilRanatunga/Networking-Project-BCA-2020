@@ -13,9 +13,16 @@ public class ClientServerHandler implements Runnable {
       String incoming = "";
 
       while( (incoming = socketIn.readLine()) != null) {
-        //handle different headers
-        //EXIT
-        if(incoming.startsWith("SUBMITNAME")) {
+        if(incoming.startsWith("CHAT")) {
+          String details = incoming.substring(4).trim();
+          int delimiter = details.indexOf(" ");
+          String sender = details.substring(0, delimiter).trim();
+          String contents = details.substring(delimiter).trim();
+          if(!sender.equals(ChatClient.name)) {
+            System.out.printf("%s : %s\n", sender, contents);
+          }
+        }
+        else if(incoming.startsWith("SUBMITNAME")) {
           System.out.print("Joined! Enter a name: ");
         }
         else if(incoming.startsWith("WELCOME")) {
@@ -28,17 +35,12 @@ public class ClientServerHandler implements Runnable {
             System.out.printf("Say hello to %s!\n", name);
           }
         }
-        else if(incoming.startsWith("CHAT")) {
-          String details = incoming.substring(4).trim();
-          int delimiter = details.indexOf(" ");
-          String sender = details.substring(0, delimiter).trim();
-          String contents = details.substring(delimiter).trim();
-          if(!sender.equals(ChatClient.name)) {
-            System.out.printf("%s : %s\n", sender, contents);
-          }
+        else if(incoming.startsWith("EXIT")) {
+          String name = incoming.substring(4).trim();
+          System.out.printf("%s disconnected\n", name);
         }
         else {
-          System.out.println(incoming);
+          System.out.printf("Undefined or poorly formatted header on message : %s", incoming);
         }
       }
     }

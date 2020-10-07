@@ -36,8 +36,16 @@ public class ChatClient {
         header = "NAME";
         name = line.trim();
       }
+      else if (line.toLowerCase().startsWith("/pchat")) {
+        String details = line.substring(6).trim();
+        int delimiter = details.indexOf(" ");
+        String target = details.substring(0, delimiter).trim();
+        line = details.substring(delimiter).trim();
+
+        header = "PCHAT " + target; 
+      }
       
-      String msg = String.format("%s %s", header, line); 
+      String msg = String.format("%s %s", header, line);
       out.println(msg);
 
       line = userInput.nextLine().trim();

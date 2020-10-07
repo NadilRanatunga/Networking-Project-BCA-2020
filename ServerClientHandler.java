@@ -17,8 +17,8 @@ public class ServerClientHandler implements Runnable {
       this.clientList = clientList;
   }
 
-  /**
-* Broadcasts a message to all clients connected to the server.
+/*
+ Broadcasts a message to all clients connected to the server.
 */
   public void broadcast(String msg) {
       try {
@@ -26,18 +26,28 @@ public class ServerClientHandler implements Runnable {
           synchronized (clientList) {
               for (ClientConnectionData c : clientList){
                   c.getOut().println(msg);
-                  // c.getOut().flush();
               }
           }
       } catch (Exception ex) {
           System.out.println("broadcast caught exception: " + ex);
           ex.printStackTrace();
       }
-      
+  }
+
+/*
+Sends a message to only select clients
+*/
+  public void send(String msg, ClientConnectionData recipient) {
+    try {
+      System.out.println("Sending -- " + msg + " -- to : " + recipient.getUserName());
+      recipient.getOut().println(msg);
+    } catch (Exception ex) {
+      System.out.println("send caught exception: " + ex);
+      ex.printStackTrace();
+    }
   }
 
   public boolean validate(String name) {
-    System.out.println("Validating:" + name);
     Matcher matcher = pattern.matcher(name);
     return matcher.find();
   }
@@ -60,19 +70,35 @@ public class ServerClientHandler implements Runnable {
           client.setUserName(userName);
           //notify all that client has joined
           broadcast(String.format("WELCOME %s", client.getUserName()));
-
           
           String incoming = "";
 
           while( (incoming = in.readLine()) != null) {
               if (incoming.startsWith("CHAT")) {
-                  String chat = incoming.substring(4).trim();
-                  if (chat.length() > 0) {
-                      String msg = String.format("CHAT %s %s", client.getUserName(), chat);
-                      broadcast(msg);    
+                String chat = incoming.substring(4).trim();
+                if (chat.length() > 0) {
+                  String msg = String.format("CHAT %s %s", client.getUserName(), chat);
+                  broadcast(msg);    
+                }
+              }
+              else if (incoming.startsWith("PCHAT")) {
+                String details = incoming.substring(5).trim();
+                int delimiter = details.indexOf(" ");
+                String target = details.substring(0, delimiter).trim();
+                String message = String.format("CHAT %s %s", "(PRIVATE)" + client.getUserName(), details.substring(delimiter));
+                
+                ClientConnectionData recipient = null;
+                for (ClientConnectionData c : clientList) {
+                  if (c.getUserName().equals(target)) {
+                    recipient = c;
+                    break;
                   }
-              } else if (incoming.startsWith("QUIT")){
-                  break;
+                }
+
+                send(message, recipient);
+              }
+              else if (incoming.startsWith("QUIT")) {
+                break;
               }
           }
       } catch (Exception ex) {

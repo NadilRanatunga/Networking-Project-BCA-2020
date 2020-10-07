@@ -43,6 +43,6 @@ public class ChatServer {
             System.out.println(ex.getMessage());
         }
       }
-    } 
+    }
   }
 }

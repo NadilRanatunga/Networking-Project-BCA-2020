@@ -19,18 +19,10 @@ Typing messages and pressing enter from this point on will send a message to all
 
 There are a few predefined commands, which start with a single forward slash (/) and have special functionality:
 
-- PCHAT : Sends a private message to a specified client in the server, usage:
+- PCHAT : Sends a private message to a specified client in the server, usage: `/pchat [clientname] [message]`
 
-`/pchat [clientname] [message]`
+- RPS : Sends a Rock, Paper, Scissors challenge to a specified client in the server, usage: `/rps [clientname] [R|P|S]`
 
-- RPS : Sends a Rock, Paper, Scissors challenge to a specified client in the server, usage:
+  If a user receives an RPS request, they can respond to the challenge using RPS as well, usage: `/rps [challengername] [R|P|S]`
 
-  `/rps [clientname] [R|P|S]`
-
-If a user receives an RPS request, they can respond to the challenge using RPS as well, usage:
-
-  `/rps [challengername] [R|P|S]`
-
-- QUIT : Disconnects a client from the server, sending a message to every other client, usage:
-  
-  `/quit`
+- QUIT : Disconnects a client from the server, sending a message to every other client, usage: `/quit`

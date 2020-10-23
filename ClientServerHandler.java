@@ -27,6 +27,12 @@ public class ClientServerHandler implements Runnable {
           if(!ChatClient.ready) {
             ChatClient.ready = true;
             System.out.println("Accepted. Welcome to the chat!");
+            
+            System.out.printf("Currently connected clients: ");
+            for (String s : ChatClient.clientNames) {
+              System.out.printf("%s ", s);
+            }
+            System.out.println();
           }
           else {
             String name = incoming.getSender();
@@ -46,7 +52,7 @@ public class ClientServerHandler implements Runnable {
           System.out.printf("%s wants to play you in Rock, Paper, Scissors! To accept, type \"/rps %s [R|P|S]\"\n", name, name);
         }
         else {
-          System.out.printf("Undefined or poorly formatted header on message : %s", incoming);
+          System.out.printf("Undefined or poorly formatted header on message : %s", incoming.getContent());
         }
       }
     }

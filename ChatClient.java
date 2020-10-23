@@ -44,7 +44,7 @@ public class ChatClient {
       else if (line.toLowerCase().startsWith("/whoishere")) {
         System.out.printf("Currently connected clients: ");
         for (String s : clientNames) {
-          System.out.printf("%s, ", s);
+          System.out.printf("%s ", s);
         }
         System.out.println();
         line = userInput.nextLine().trim();

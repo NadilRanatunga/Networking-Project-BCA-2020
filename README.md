@@ -6,7 +6,7 @@ This is a simple chat application, with a console client, gui client, and a serv
 ### Protocol (Message.java)
 This chat application sends serialized objects of the following form:
 
-```json
+```
 Message {
   header : int,
   targets : ArrayList<String>,

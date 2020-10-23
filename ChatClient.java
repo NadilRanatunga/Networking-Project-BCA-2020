@@ -1,19 +1,21 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class ChatClient {
   private static Socket socket;
-  private static BufferedReader socketIn;
-  private static PrintWriter out;
+  private static ObjectInputStream messageIn;
+  private static ObjectOutputStream messageOut;
+  public static ArrayList<String> clientNames;
   public static String name = "";
   public static boolean ready = false;
 
   public static void main(String[] args) throws Exception {
     Scanner userInput = new Scanner(System.in);
-    
+    clientNames = new ArrayList<String>();
+
     System.out.println("What's the server IP? ");
     String serverip = userInput.nextLine();
     System.out.println("What's the server port? ");
@@ -21,48 +23,64 @@ public class ChatClient {
     userInput.nextLine();
     
     socket = new Socket(serverip, port);
-    socketIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    out = new PrintWriter(socket.getOutputStream(), true);
-    
+    messageIn = new ObjectInputStream(socket.getInputStream());
+    messageOut = new ObjectOutputStream(socket.getOutputStream());
+
     // start a thread to listen for server messages
-    ClientServerHandler listener = new ClientServerHandler(socketIn);
+    ClientServerHandler listener = new ClientServerHandler(messageIn);
     Thread t = new Thread(listener);
     t.start();
     
     String line = userInput.nextLine().trim();
     while(!line.toLowerCase().startsWith("/quit")) {
-      String header = "CHAT";
+      int header = Message.MSG_HDR_CHAT;
+      ArrayList<String> targets = new ArrayList<String>();
+
       if (!ready) {
-        header = "NAME";
+        header = Message.MSG_HDR_NAME;
         name = line.trim();
+      }
+      else if (line.toLowerCase().startsWith("/whoishere")) {
+        System.out.printf("Currently connected clients: ");
+        for (String s : clientNames) {
+          System.out.printf("%s, ", s);
+        }
+        System.out.println();
+        line = userInput.nextLine().trim();
+        continue;
       }
       else if (line.toLowerCase().startsWith("/pchat")) {
         String details = line.substring(6).trim();
         int delimiter = details.indexOf(" ");
-        String target = details.substring(0, delimiter).trim();
+        targets.add(details.substring(0, delimiter).trim());
         line = details.substring(delimiter).trim();
 
-        header = "PCHAT " + target; 
+        header = Message.MSG_HDR_PCHAT;
       }
       else if (line.toLowerCase().startsWith("/rps")) {
         String details = line.substring(4).trim();
         int delimiter = details.indexOf(" ");
-        String target = details.substring(0, delimiter).trim();
+        targets.add(details.substring(0, delimiter).trim());
         line = details.substring(delimiter).trim();
 
-        header = "RPS " + target; 
+        header = Message.MSG_HDR_RPS;
       }
       
-      String msg = String.format("%s %s", header, line);
-      out.println(msg);
+      Message msg = new Message(header, targets, name, line);
+      messageOut.writeObject(msg);
+      messageOut.flush();
 
       line = userInput.nextLine().trim();
     }
     
-    out.println("QUIT");
-    out.close();
+    messageOut.writeObject(new Message(Message.MSG_HDR_QUIT, null, name, ""));
+    messageOut.flush();
+    messageOut.close();
+
     userInput.close();
-    socketIn.close();
+
+    messageIn.close();
+
     socket.close();   
   }
 }

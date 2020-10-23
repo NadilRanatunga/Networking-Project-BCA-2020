@@ -1,50 +1,48 @@
-import java.io.BufferedReader;
+import java.io.ObjectInputStream;
 
 public class ClientServerHandler implements Runnable {
-  private BufferedReader socketIn;
+  private ObjectInputStream messageIn;
 
-  public ClientServerHandler(BufferedReader socketIn) {
-    this.socketIn = socketIn;
+  public ClientServerHandler(ObjectInputStream messageIn) {
+    this.messageIn = messageIn;
   }
 
   @Override
   public void run() {
     try {
-      String incoming = "";
+      Message incoming = null;
 
-      while( (incoming = socketIn.readLine()) != null) {
-        if(incoming.startsWith("CHAT")) {
-          String details = incoming.substring(4).trim();
-          int delimiter = details.indexOf(" ");
-          String sender = details.substring(0, delimiter).trim();
-          String contents = details.substring(delimiter).trim();
+      while( (incoming = (Message)messageIn.readObject()) != null) {
+        if(incoming.getHeader() == Message.MSG_HDR_CHAT) {
+          String sender = incoming.getSender();
           if(!sender.equals(ChatClient.name)) {
-            System.out.printf("%s : %s\n", sender, contents);
+            System.out.printf("%s : %s\n", sender, incoming.getContent());
           }
         }
-        else if(incoming.startsWith("SUBMITNAME")) {
+        else if(incoming.getHeader() == Message.MSG_HDR_SUBMITNAME) {
           System.out.print("Joined! Enter a name: ");
         }
-        else if(incoming.startsWith("WELCOME")) {
+        else if(incoming.getHeader() == Message.MSG_HDR_WELCOME) {
+          ChatClient.clientNames = incoming.getTargets();
           if(!ChatClient.ready) {
             ChatClient.ready = true;
             System.out.println("Accepted. Welcome to the chat!");
           }
           else {
-            String name = incoming.substring(7).trim();
+            String name = incoming.getSender();
             System.out.printf("Say hello to %s!\n", name);
           }
         }
-        else if(incoming.startsWith("EXIT")) {
-          String name = incoming.substring(4).trim();
+        else if(incoming.getHeader() == Message.MSG_HDR_EXIT) {
+          String name = incoming.getSender();
           System.out.printf("%s disconnected\n", name);
         }
-        else if(incoming.startsWith("RPSRESULT")) {
-          String result = incoming.substring(9).trim();
+        else if(incoming.getHeader() == Message.MSG_HDR_RPSRESULT) {
+          String result = incoming.getContent();
           System.out.println(result);
         }
-        else if(incoming.startsWith("RPS")) {
-          String name = incoming.substring(3).trim();
+        else if(incoming.getHeader() == Message.MSG_HDR_RPS) {
+          String name = incoming.getSender();
           System.out.printf("%s wants to play you in Rock, Paper, Scissors! To accept, type \"/rps %s [R|P|S]\"\n", name, name);
         }
         else {

@@ -2,6 +2,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class ChatClient {
@@ -49,11 +50,17 @@ public class ChatClient {
         line = userInput.nextLine().trim();
         continue;
       }
-      else if (line.toLowerCase().startsWith("/pchat")) {
-        String details = line.substring(6).trim();
-        int delimiter = details.indexOf(" ");
-        targets.add(details.substring(0, delimiter).trim());
-        line = details.substring(delimiter).trim();
+      else if (line.startsWith("@")) {
+        String[] sections = line.split(" ");
+        for (int i = 0; i < sections.length; i++) {
+          if (sections[i].trim().startsWith("@")) {
+            targets.add(sections[i].substring(1).trim());
+          }
+          else {
+            line = String.join(" ", Arrays.copyOfRange(sections, i, sections.length));
+            break;
+          }
+        }
 
         header = Message.MSG_HDR_PCHAT;
       }

@@ -23,7 +23,6 @@ public class ServerClientHandler implements Runnable {
 */
   public void broadcast(Message msg) {
       try {
-          System.out.println("Broadcasting -- " + msg.getContent());
           synchronized (clientList) {
               for (ClientConnectionData c : clientList){
                   c.getOut().writeObject(msg);
@@ -54,7 +53,6 @@ Sends a message to only select clients
       return;
     }
     try {
-      System.out.println("Sending -- " + msg.getContent() + " -- to : " + recipient.getUserName());
       recipient.getOut().writeObject(msg);
       recipient.getOut().flush();
     } catch (Exception ex) {

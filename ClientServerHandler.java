@@ -40,6 +40,7 @@ public class ClientServerHandler implements Runnable {
           }
         }
         else if(incoming.getHeader() == Message.MSG_HDR_EXIT) {
+          ChatClient.clientNames = incoming.getTargets();
           String name = incoming.getSender();
           System.out.printf("%s disconnected\n", name);
         }

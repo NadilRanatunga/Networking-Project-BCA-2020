@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -69,8 +70,10 @@ public class ChatGuiClient extends Application {
   
   private Stage stage;
   private TextArea messageArea;
+  private TextArea userArea;
   private TextField textInput;
   private Button sendButton;
+  private Button rpsButton;
   private ServerInfo serverInfo;
   //volatile keyword makes individual reads/writes of the variable atomic
   // Since username is accessed from multiple threads, atomicity is important 
@@ -99,9 +102,16 @@ public class ChatGuiClient extends Application {
     }
     this.stage = primaryStage;
     BorderPane borderPane = new BorderPane();
+    userArea = new TextArea();
+    userArea.setWrapText(false);
+    userArea.setEditable(false);
+    userArea.setPrefWidth(100);
+    borderPane.setRight(userArea);
+
     messageArea = new TextArea();
     messageArea.setWrapText(true);
     messageArea.setEditable(false);
+    messageArea.setPrefWidth(300);
     borderPane.setCenter(messageArea);
     //At first, can't send messages - wait for WELCOME!
     textInput = new TextField();
@@ -110,8 +120,11 @@ public class ChatGuiClient extends Application {
     sendButton = new Button("Send");
     sendButton.setDisable(true);
     sendButton.setOnAction(e -> sendMessage());
+    rpsButton = new Button("RPS");
+    rpsButton.setDisable(true);
+    rpsButton.setOnAction(e -> sendRandomRPS());
     HBox hbox = new HBox();
-    hbox.getChildren().addAll(new Label("Message: "), textInput, sendButton);
+    hbox.getChildren().addAll(new Label("Message: "), textInput, sendButton, rpsButton);
     HBox.setHgrow(textInput, Priority.ALWAYS);
     borderPane.setBottom(hbox);
     Scene scene = new Scene(borderPane, 400, 500);
@@ -131,6 +144,30 @@ public class ChatGuiClient extends Application {
       } catch (IOException ex) {}
     });
     new Thread(socketListener).start();
+  }
+  private void sendRandomRPS() {
+    Random rand = new Random();
+    String target = "";
+    if(clientNames.size() < 2)
+      return;
+    do {
+      target = clientNames.get(rand.nextInt(clientNames.size()));
+    } while (target.equals(username));
+    String[] options = {"R", "P", "S"};
+    String action = options[rand.nextInt(options.length)];
+
+    ArrayList<String> targets = new ArrayList<String>();
+    targets.add(target);
+    
+    Message msg = new Message(Message.MSG_HDR_RPS, targets, username, action);
+    textInput.clear();
+    try {
+      messageOut.writeObject(msg);
+      messageOut.flush();
+    } catch (IOException ex) {}
+    Platform.runLater(() -> {
+      messageArea.appendText(String.format("You sent a random RPS request to %s and chose %s\n", targets.get(0), action));
+    });
   }
   private void sendMessage() {
     String line = textInput.getText().trim();
@@ -267,15 +304,26 @@ public class ChatGuiClient extends Application {
             ChatGuiClient.clientNames = incoming.getTargets();
             String user = incoming.getSender();
             if (user.equals(username)) {
+              userArea.clear();
+              userArea.appendText("Online Users:\n");
+              for(String s : ChatGuiClient.clientNames) {
+                userArea.appendText(s + "\n");
+              }
               Platform.runLater(() -> {
                 stage.setTitle("Chatter - " + username);
                 textInput.setEditable(true);
                 sendButton.setDisable(false);
+                rpsButton.setDisable(false);
                 messageArea.appendText("Welcome to the chatroom, " + username + "!\n");
               });
             }
             else {
               Platform.runLater(() -> {
+                userArea.clear();
+                userArea.appendText("Online Users:\n");
+                for(String s : ChatGuiClient.clientNames) {
+                  userArea.appendText(s + "\n");
+                }
                 messageArea.appendText(user + " has joined the chatroom.\n");
               });
             }
@@ -286,8 +334,14 @@ public class ChatGuiClient extends Application {
               messageArea.appendText(sender + ": " + content + "\n");
             });
           } else if (incoming.getHeader() == Message.MSG_HDR_EXIT) {
+            ChatGuiClient.clientNames = incoming.getTargets();
             String sender = incoming.getSender();
             Platform.runLater(() -> {
+              userArea.clear();
+              userArea.appendText("Online Users:\n");
+              for(String s : ChatGuiClient.clientNames) {
+                userArea.appendText(s + "\n");
+              }
               messageArea.appendText(sender + " has left the chatroom.\n");
             });
           } else if (incoming.getHeader() == Message.MSG_HDR_RPS) {

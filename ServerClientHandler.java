@@ -163,7 +163,11 @@ Sends a message to only select clients
               clientList.remove(client); 
           }
           System.out.println(client.getName() + " has left.");
-          broadcast(new Message(Message.MSG_HDR_EXIT, null, client.getUserName(), ""));
+          ArrayList<String> clientNames = new ArrayList<String>();
+          for(ClientConnectionData c : clientList) {
+            clientNames.add(c.getUserName());
+          }
+          broadcast(new Message(Message.MSG_HDR_EXIT, clientNames, client.getUserName(), ""));
           try {
               client.getSocket().close();
           } catch (IOException ex) {}
